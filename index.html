@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="description" content="App para controle de dosagem de destilados" />
+        <title>DrinkCounter — Controle de Dosagem</title>
+        <link rel="stylesheet" href="style.css" />
+        <link rel="manifest" href="manifest.json" />
+        <meta name="theme-color" content="#7dd3fc">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    </head>
+    <body>
+        <main class="container" role="main">
+            <!-- Cabeçalho com navegação -->
+            <header class="app-header">
+                <h1 class="title">DrinkCounter</h1>
+                <nav class="nav-tabs" role="tablist">
+                    <button class="tab-btn active" data-tab="cardapio" aria-selected="true">Cardápio</button>
+                    <button class="tab-btn" data-tab="registro" aria-selected="false">Nova Bebida</button>
+                    <button class="tab-btn" data-tab="relatorio" aria-selected="false">Relatório</button>
+                </nav>
+            </header>
+
+            <!-- Aba de Cardápio -->
+            <section id="cardapio" class="tab-content active" role="tabpanel" aria-labelledby="tab-cardapio">
+                <div class="display-area" aria-live="polite">
+                    <div id="totalHoje" class="total-display">
+                        <span class="total-label">Total hoje:</span>
+                        <span id="totalValue" class="total-value">0ml</span>
+                    </div>
+                </div>
+
+                <div class="cardapio-header">
+                    <h2>Bebidas Cadastradas</h2>
+                    <button id="btnRefreshCardapio" class="btn small">↻ Atualizar</button>
+                </div>
+
+                <div id="listaCardapio" class="cardapio-lista">
+                    <!-- Cards das bebidas serão gerados aqui -->
+                </div>
+
+                <div class="cardapio-empty" id="emptyCardapio">
+                    <p>Nenhuma bebida cadastrada ainda.</p>
+                    <button class="btn primary" onclick="app.mudarAba('registro')">
+                        Cadastrar Primeira Bebida
+                    </button>
+                </div>
+            </section>
+
+            <!-- Aba de Registro -->
+            <section id="registro" class="tab-content" role="tabpanel" aria-labelledby="tab-registro" hidden>
+                <div class="form-section">
+                    <h2>Cadastrar Nova Bebida</h2>
+                    
+                    <form id="registroForm" class="registro-form">
+                        <div class="form-group">
+                            <label for="drinkName">Nome da bebida:</label>
+                            <input type="text" id="drinkName" required placeholder="Ex: Old Fashioned, Caipirinha, etc.">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tipoDestilado">Tipo de destilado:</label>
+                            <select id="tipoDestilado" required>
+                                <option value="">Selecione...</option>
+                                <option value="cachaca">Cachaça</option>
+                                <option value="vodka">Vodka</option>
+                                <option value="whiskey">Whiskey</option>
+                                <option value="tequila">Tequila</option>
+                                <option value="rum">Rum</option>
+                                <option value="gin">Gin</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dosagem">Dosagem por dose (ml):</label>
+                            <input type="number" id="dosagem" min="1" max="500" value="50" required>
+                            <small class="help-text">Quantidade em ml para cada dose</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn primary">Cadastrar Bebida</button>
+                            <button type="button" id="btnLimpar" class="btn neutral">Limpar</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Aba de Relatório -->
+            <section id="relatorio" class="tab-content" role="tabpanel" aria-labelledby="tab-relatorio" hidden>
+                <div class="relatorio-header">
+                    <h2>Histórico de Consumo</h2>
+                    <div class="filtros">
+                        <select id="filtroData">
+                            <option value="hoje">Hoje</option>
+                            <option value="ontem">Ontem</option>
+                            <option value="semana">Esta semana</option>
+                            <option value="mes">Este mês</option>
+                            <option value="tudo">Todo período</option>
+                        </select>
+                        <button id="exportRelatorio" class="btn small neutral">Exportar</button>
+                    </div>
+                </div>
+
+                <div id="listaRelatorio" class="relatorio-lista">
+                    <!-- Estrutura será gerada via JavaScript -->
+                </div>
+
+                <div class="resumo">
+                    <div class="resumo-item">
+                        <span>Total período:</span>
+                        <strong id="totalPeriodo">0ml</strong>
+                    </div>
+                    <div class="resumo-item">
+                        <span>Média por dia:</span>
+                        <strong id="mediaDia">0ml</strong>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <small>
+                    Acompanhe seu consumo de forma consciente
+                </small>
+            </footer>
+        </main>
+
+        <script src="app.js" defer></script>
+        
+        <!-- Script do Service Worker -->
+        <script>
+            // Registro e controle do Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', async () => {
+                    try {
+                        const registration = await navigator.serviceWorker.register('./sw.js');
+                        console.log('Service Worker registrado com sucesso:', registration);
+
+                        // Verifica se há atualizações
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('Nova versão do Service Worker encontrada!');
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Novo conteúdo disponível - mostrar botão de atualização
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+
+                        // Força atualização se necessário
+                        if (registration.waiting) {
+                            showUpdateNotification();
+                        }
+
+                    } catch (error) {
+                        console.error('Falha ao registrar Service Worker:', error);
+                    }
+                });
+
+                // Atualiza o Service Worker quando solicitado
+                let refreshing;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
+
+            // Mostra notificação de atualização
+            function showUpdateNotification() {
+                if (confirm('Nova versão disponível! Deseja atualizar agora?')) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    });
+                }
+            }
+
+            // Verifica conexão
+            window.addEventListener('online', () => {
+                console.log('App está online');
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('App está offline');
+            });
+
+            // Variável global para acessar o app
+            let app;
+            document.addEventListener('DOMContentLoaded', () => {
+                app = new DrinkCounter();
+            });
+        </script>
+    </body>
+</html>
