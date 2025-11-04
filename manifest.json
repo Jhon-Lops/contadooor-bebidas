@@ -1,27 +1,21 @@
 {
-  "name": "DrinkCounter - Controle de Dosagem",
+  "name": "DrinkCounter",
   "short_name": "DrinkCounter",
   "description": "App para controle de consumo de destilados",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f1724",
   "theme_color": "#7dd3fc",
-  "orientation": "portrait",
-  "scope": "./",
-  "lang": "pt-BR",
-  "categories": ["health", "lifestyle", "productivity"],
+  "background_color": "#0f1724",
   "icons": [
     {
-      "src": "./icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "icons/icon-512.png",
+      "sizes": "512x512", 
+      "type": "image/png"
     }
   ]
 }
